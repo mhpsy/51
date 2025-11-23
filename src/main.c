@@ -3,6 +3,7 @@
 #include <utils/button.h>
 #include <utils/nixie.h>
 #include <utils/LCD1602.h>
+#include <utils/matrix_keypad.h>
 
 // LED 状态变量
 unsigned char led_state = 0xFE; // 初始状态：0b11111110，P2.0 点亮
@@ -41,18 +42,26 @@ void button_handle_p33(void)
 
 void main()
 {
+    unsigned char key_num = 0;
     P2 = led_state; // 初始化 LED 状态
 
     LCD_Init();
+    LCD_ShowString(1, 1, "Matrix Key:");
 
     while (1)
     {
-        button_scan(); // 扫描按键
+        key_num = MatrixKeypad_GetKey();
+        if (key_num)
+        {
+            LCD_ShowNum(2, 1, key_num, 2);
+        }
 
-        // 示例：静态显示，如果需要动态显示多个数字，需要在这里快速循环扫描
-        Nixie_Show(1, 1);
-        Nixie_Show(2, 2);
-        Nixie_Show(3, 3);
+        // button_scan(); // 扫描按键
+
+        // // 示例：静态显示，如果需要动态显示多个数字，需要在这里快速循环扫描
+        // Nixie_Show(1, 1);
+        // Nixie_Show(2, 2);
+        // Nixie_Show(3, 3);
 
         // LCD_ShowString(1, 1, "Hello, World!");
         // LCD_ShowString(1, 14, "mmm");
