@@ -4,67 +4,59 @@
 #include <utils/nixie.h>
 #include <utils/LCD1602.h>
 #include <utils/matrix_keypad.h>
+#include <utils/timer.h>
 
 // LED 状态变量
-unsigned char led_state = 0xFE; // 初始状态：0b11111110，P2.0 点亮
+volatile unsigned char led_state = 0xFE; // 初始状态：0b11111110，P2.0 点亮
 
 void button_handle_p30(void)
 {
-    // P3.0 按下：LED 左移
-    led_state = (led_state << 1) | 0x01; // 左移并补1
-    if (led_state == 0xFF)               // 如果全灭，重置为 P2.0 点亮
-    {
-        led_state = 0xFE;
-    }
-    P2 = led_state;
 }
-
-unsigned int count = 0;
 
 void button_handle_p31(void)
 {
-    count += 1;
-    LCD_ShowNum(2, 1, count, 3);
-    LCD_ShowString(1, 1, "mhpsy");
 }
 
 void button_handle_p32(void)
 {
-    // 测试数码管：在第8位显示8
-    Nixie_Show(8, 8);
 }
 
 void button_handle_p33(void)
 {
-    // 其他按键功能可在此实现
-    Nixie_Show(4, 4); // 在第4位显示4作为示例
+}
+
+// 定时器回调函数，每1ms调用一次
+void Timer0_Callback(void)
+{
+    // 注意：不要在这里重置 P2，否则会覆盖下面的逻辑
+    
+    // 使用 timer.c 中的计数器
+    if (Timer0_GetOverflowCount() >= 500) // 0.5秒钟
+    {
+        Timer0_ResetOverflowCount();
+        // 切换LED状态
+        led_state = (led_state << 1) | 0x01; // 左移并补1
+        if (led_state == 0xFF)               // 如果全灭，重置为 P2.0 点亮
+        {
+            led_state = 0xFE;
+        }
+        P2 = led_state;
+    }
+}
+
+// 显式定义中断服务函数，确保链接器能正确生成中断向量
+void Timer0_ISR(void) __interrupt(1)
+{
+    Timer0_HandleISR();
 }
 
 void main()
 {
-    unsigned char key_num = 0;
-    P2 = led_state; // 初始化 LED 状态
-
-    LCD_Init();
-    LCD_ShowString(1, 1, "Matrix Key:");
-
+    P2 = 0xFE; // 先点亮第一个灯，证明程序跑起来了
+    Timer0_SetCallback(Timer0_Callback);
+    Timer0_Init();
+    
     while (1)
     {
-        key_num = MatrixKeypad_GetKey();
-        if (key_num)
-        {
-            LCD_ShowNum(2, 1, key_num, 2);
-        }
-
-        // button_scan(); // 扫描按键
-
-        // // 示例：静态显示，如果需要动态显示多个数字，需要在这里快速循环扫描
-        // Nixie_Show(1, 1);
-        // Nixie_Show(2, 2);
-        // Nixie_Show(3, 3);
-
-        // LCD_ShowString(1, 1, "Hello, World!");
-        // LCD_ShowString(1, 14, "mmm");
-        // LCD_ShowNum(2, 1, 1234, 4);
     }
 }
