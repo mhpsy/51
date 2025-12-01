@@ -1,4 +1,5 @@
 #include <mcs51/8052.h>
+#include "UART.h"
 
 void Uart_Init(void)	//4800bps@11.0592MHz
 {

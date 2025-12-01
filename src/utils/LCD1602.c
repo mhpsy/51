@@ -12,7 +12,8 @@
   * @param  无
   * @retval 无
   */
-void LCD_Delay()
+void LCD_Delay(void)
+
 {
 	volatile unsigned char i, j;
 
@@ -79,7 +80,8 @@ void LCD_SetCursor(unsigned char Line,unsigned char Column)
   * @param  无
   * @retval 无
   */
-void LCD_Init()
+void LCD_Init(void)
+
 {
 	LCD_WriteCommand(0x38);//八位数据接口，两行显示，5*7点阵
 	LCD_WriteCommand(0x0c);//显示开，光标关，闪烁关

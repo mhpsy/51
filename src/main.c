@@ -6,6 +6,8 @@
 #include <utils/matrix_keypad.h>
 #include <utils/timer.h>
 #include <utils/UART.h>
+#include <utils/LED.h>
+#include <utils/ratate.h>
 
 // LED 状态变量
 volatile unsigned char led_state = 0xFE; // 初始状态：0b11111110，P2.0 点亮
@@ -58,19 +60,44 @@ void Timer0_ISR(void) __interrupt(1)
 
 void Uart_receive_ISR(void) __interrupt(4)
 {
-    if(RI == 0) return; // 如果不是接收中断，直接返回
-    P2=~SBUF; // 接收到的数据取反后显示在 P2 口
-    RI=0;     // 清除接收中断标志
+    if (RI == 0)
+        return; // 如果不是接收中断，直接返回
+    P2 = ~SBUF; // 接收到的数据取反后显示在 P2 口
+    RI = 0;     // 清除接收中断标志
 }
 
-void main()
+void main(void)
+
 {
-    P2 = 0xFE; // 先点亮第一个灯，证明程序跑起来了
+    P2 = 0x0E; // 证明程序跑起来了
     Timer0_SetCallback(Timer0_Callback);
     Timer0_Init();
     Uart_Init();
+    MxLED_Init();
+
+    int showNum = 0;
+    unsigned int speed_count = 0;
 
     while (1)
     {
+        // 1. 扫描显示 (必须不断循环扫描)
+        for (int i = 7; i >= 0; i--)
+        {
+            MxLED_ShowColumn(i, ROL8(0x10, i + showNum));
+            // 关键点：每列显示后必须保持一段时间，否则亮度极低
+            Delay(1); 
+        }
+
+        // 2. 动画更新逻辑 (通过计数器降速)
+        speed_count++;
+        if (speed_count > 20) // 每扫描 20 轮更新一次动画 (约 20 * 8ms = 160ms)
+        {
+            speed_count = 0;
+            showNum++;
+            if(showNum > 7){
+                showNum = 0;
+            }
+        }
     }
+
 }
